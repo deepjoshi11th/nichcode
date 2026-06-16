@@ -54,7 +54,7 @@ def create_app() -> FastAPI:
         # Apply security to protected endpoints
         for path, path_item in openapi_schema.get("paths", {}).items():
             # Apply security to /api/* endpoints (all protected data endpoints)
-            if path.startswith("/api/"):
+            if path.startswith("/api/") or path.startswith("/game/") or path.startswith("/auth/"):
                 for method, operation in path_item.items():
                     if method in ["get", "post", "put", "delete", "patch"]:
                         if "security" not in operation:

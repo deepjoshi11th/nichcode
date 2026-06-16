@@ -1,7 +1,7 @@
 """Authentication endpoints."""
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from .models import SignupRequest, LoginRequest, UserResponse
-from .config import supabase
+from .config import supabase, supabase_admin
 from .dependencies import get_current_user
 
 
@@ -83,3 +83,17 @@ async def logout():
     Logout endpoint (token invalidation happens on client side).
     """
     return {"message": "Logged out successfully"}
+
+@router.delete("/delete")
+async def delete(user: dict = Depends(get_current_user)):
+    """
+    Delete current authenticated user account.
+    """
+    try:
+        response = supabase_admin.auth.admin.delete_user(user.id)
+    except Exception as e:      
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Account deletion failed: {str(e)}",
+        )
+    return {"message": "Account deleted successfully"}
