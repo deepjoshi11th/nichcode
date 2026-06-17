@@ -4,6 +4,24 @@
  */
 
 const AUTH = {
+
+    async handleProcesssAuth(hash) {
+        if (!hash) {
+            return { success: false, error: 'No hash value found in URL'}
+        }
+        try {
+            const data = await CLIENT.call('/auth/process?' + hash)
+            if (data.session && data.session.access_token) {
+                CLIENT.setToken(data.session.access_token);
+                return { success: true };
+            } else {
+                return { success: false, error: 'Login post signup failed' };
+            }
+        } catch(error) {
+            return { success: false, error: error.message };
+        }
+    },
+
     async signup(email, password, confirmPassword) {
         if (password !== confirmPassword) {
             return { success: false, error: 'Passwords do not match' };
