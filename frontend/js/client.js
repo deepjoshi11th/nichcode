@@ -1,58 +1,54 @@
+let baseURL = window.location.origin;
+const STORAGE_KEY = 'auth_token';
 
-const CLIENT = {
+export function getToken() {
+    return localStorage.getItem(STORAGE_KEY);
+}
 
-    baseURL: window.location.origin,
-    STORAGE_KEY: 'auth_token',
+export function setToken(token) {
+    localStorage.setItem(STORAGE_KEY, token);
+}
 
-    getToken() {
-        return localStorage.getItem(this.STORAGE_KEY);
-    },
+export function clearToken() {
+    localStorage.removeItem(STORAGE_KEY);
+}
 
-    setToken(token) {
-        localStorage.setItem(this.STORAGE_KEY, token);
-    },
+export function isAuthenticated() {
+    return !!getToken();
+}
 
-    clearToken() {
-        localStorage.removeItem(this.STORAGE_KEY);
-    },
-
-    isAuthenticated() {
-        return !!this.getToken();
-    },
-
-    async call(endpoint, options = {}, responseType = 'json') {
-        const token = this.getToken();
-        const headers = {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-            ...options.headers,
-        };
+export async function call(endpoint, options = {}, responseType = 'json') {
+    const token = getToken();
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...options.headers,
+    };
+    
+    try {
+        const response = await fetch(`${baseURL}${endpoint}`, {
+            ...options,
+            headers,
+        });
         
-        try {
-            const response = await fetch(`${this.baseURL}${endpoint}`, {
-                ...options,
-                headers,
-            });
-            
-            if (response.status === 401) {
-                // Token invalid or expired
-                this.clearToken();
-                throw new Error('Session expired. Please login again.');
-            }
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || `API Error: ${response.status}`);
-            }
-                      
-            if (responseType === 'blob') {
-                return response.blob();
-            }
-            
-            return response.json();
-        } catch (error) {
-            throw error;
+        if (response.status === 401) {
+            // Token invalid or expired
+            clearToken();
+            throw new Error('Session expired. Please login again.');
         }
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `API Error: ${response.status}`);
+        }
+                    
+        if (responseType === 'blob') {
+            return response.blob();
+        }
+        
+        return response.json();
+    } catch (error) {
+        throw error;
     }
-};
+}
     
