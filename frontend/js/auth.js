@@ -1,5 +1,5 @@
 import {
-    call, setToken, getToken, isAuthenticated, clearToken, isAuthenticated as isAuthenticatedFromClient
+    call, setToken, getToken, clearToken, isAuthenticated as isAuthenticatedFromClient
 } from "./client.js"
 
 /**

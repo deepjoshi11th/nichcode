@@ -1,9 +1,9 @@
 import {
-    init as initUI, showDefaultUI, showMenu, showGameUI, showLoading, hideLoading, showError, updateQuestion, showResultUI, showJudgement,
+    init as initUI, showDefaultUI, showMenu, showGameUI, showLoading, hideLoading, showError, updateQuestion as updateQuestionToUI, showResultUI, showJudgement,
     optButtons, downloadButton, startNewGameBtn, resumeGameBtn, backToMenuBtn, retryBtn, errorBackBtn
 } from "./game_ui.js"
 import { isAuthenticated } from "./auth.js";
-import { getGameIDForUser, createGame, deleteGame, generateNewQuestion, submitAnswer, getJudgement } from "./game_api.js";
+import { getGameIDForUser, createGame, deleteGame, generateNewQuestion, submitAnswer as submitAnswerApi, getJudgement } from "./game_api.js";
 
 let currentQuestionId = null;
 let gameId = null;
@@ -15,99 +15,99 @@ let lastActionData = null; // Store data for retry
 
 async function init() {
     await initUI();
-    this.setupEventListeners();
+    setupEventListeners();
 
     if (isAuthenticated()) {
-        await this.showGameMenu();
+        await showGameMenu();
     } else {
         showDefaultUI();
     }
-},
+}
 
 function setupEventListeners() {
     optButtons.forEach((button, index) => {
         button.addEventListener('click', async () => {
-            const questionId = this.currentQuestionId;
+            const questionId = currentQuestionId;
             const answer = index;
-            await this.submitAnswer(questionId, answer);
+            await submitAnswer(questionId, answer);
         });
     });
-    downloadButton.addEventListener('click', this.updateJudgement);
-    startNewGameBtn.addEventListener('click', () => this.deleteAndStartNewGame());
-    resumeGameBtn.addEventListener('click', () => this.resumeGame());
-    backToMenuBtn.addEventListener('click', () => this.deleteAndBackToMenu());
-    retryBtn.addEventListener('click', () => this.retryLastAction());
-    errorBackBtn.addEventListener('click', () => this.deleteAndBackToMenu());
-},
+    downloadButton.addEventListener('click', updateJudgement);
+    startNewGameBtn.addEventListener('click', () => deleteAndStartNewGame());
+    resumeGameBtn.addEventListener('click', () => resumeGame());
+    backToMenuBtn.addEventListener('click', () => deleteAndBackToMenu());
+    retryBtn.addEventListener('click', () => retryLastAction());
+    errorBackBtn.addEventListener('click', () => deleteAndBackToMenu());
+}
 
 async function showGameMenu() {
     try {
         const response = await getGameIDForUser();
-        this.hasExistingGame = response.data ? true : false;
-        showMenu(this.hasExistingGame);
+        hasExistingGame = response.data ? true : false;
+        showMenu(hasExistingGame);
     } catch (error) {
         console.error('Error checking for existing game:', error);
         showMenu(false);
     }
-},
+}
 
 async function startNewGame() {
     try {
         const response = await createGame();
-        this.gameId = response['data']['gameid'];
-        await this.loadNextQuestion();
+        gameId = response['data']['gameid'];
+        await loadNextQuestion();
         showGameUI();
     } catch (error) {
         console.error('Error starting new game:', error);
         showDefaultUI();
     }
-},
+}
 
 async function deleteAndStartNewGame() {
     try {
         let response = await getGameIDForUser();
         if (response['success'] && response['data'] != null) {
-            this.gameId = response['data']['gameId'];
-            await deleteGame(this.gameId);
+            gameId = response['data']['gameId'];
+            await deleteGame(gameId);
             console.log('Existing game deleted');
         }
         // Now start a new game
-        await this.startNewGame();
+        await startNewGame();
     } catch (error) {
         console.error('Error deleting game and starting new:', error);
         // Still try to start a new game even if deletion fails
-        await this.startNewGame();
+        await startNewGame();
     }
-},
+}
 
 async function resumeGame() {
     try {
         let response = await getGameIDForUser();
-        this.gameId = response['data']['gameId'];
-        await this.loadNextQuestion();
+        gameId = response['data']['gameId'];
+        await loadNextQuestion();
         showGameUI();
     } catch (error) {
         console.error('Error resuming game:', error);
         showDefaultUI();
     }
-},
+}
 
 async function deleteAndBackToMenu() {
     try {
         // Delete current game if one is active
-        if (this.gameId) {
-            await deleteGame(this.gameId);
+        if (gameId) {
+            await deleteGame(gameId);
             console.log('Current game deleted');
-            this.gameId = null;
+            gameId = null;
         }
         // Go back to menu
-        await this.showGameMenu();
+        await showGameMenu();
     } catch (error) {
         console.error('Error deleting game and returning to menu:', error);
         // Still go back to menu even if deletion fails
-        await this.showGameMenu();
+        await showGameMenu();
     }
-},
+}
 
 async function launchGame() {
     try {
@@ -115,61 +115,61 @@ async function launchGame() {
         if (!response.data) {
             response = await createGame(); 
         }
-        this.gameId = response['data']['gameId'];
-        let questionData = await generateNewQuestion(this.gameId);
-        this.updateQuestion(questionData['data']);
+        gameId = response['data']['gameId'];
+        let questionData = await generateNewQuestion(gameId);
+        updateQuestion(questionData['data']);
     } catch (error) {
         console.error('Error launching game:', error);
         showDefaultUI();
     }
-},
+}
 
 async function loadNextQuestion() {
     try {
-        this.lastAction = 'loadNextQuestion';
-        this.lastActionData = {};
+        lastAction = 'loadNextQuestion';
+        lastActionData = {};
         showLoading();
-        let questionData = await generateNewQuestion(this.gameId);
+        let questionData = await generateNewQuestion(gameId);
         hideLoading();
-        this.updateQuestion(questionData['data']);
+        updateQuestion(questionData['data']);
     } catch (error) {
         console.error('Error loading question:', error);
         showError('Failed to load the next question. Please try again.');
     }
-},
+}
 
 async function submitAnswer(questionId, answerIndex) {
     try {
-        this.lastAction = 'submitAnswer';
-        this.lastActionData = { questionId, answerIndex };
+        lastAction = 'submitAnswer';
+        lastActionData = { questionId, answerIndex };
         showLoading();
-        await submitAnswer(questionId, this.options[answerIndex]);
-        let response = await generateNewQuestion(this.gameId);
+        await submitAnswerApi(questionId, options[answerIndex]);
+        let response = await generateNewQuestion(gameId);
         hideLoading();
-        this.updateQuestion(response['data']);
+        updateQuestion(response['data']);
     } catch (error) {
         console.error('Error submitting answer:', error);
         showError('Failed to load the next question. Your answer has been recorded. Please try again.');
     }
-},
+}
 
 function updateQuestion(questionData) {
-    this.currentQuestionId = questionData['id'];
-    this.text = questionData['text'];
-    this.options = questionData['options'];
+    currentQuestionId = questionData['id'];
+    text = questionData['text'];
+    options = questionData['options'];
     if (questionData['cont']) {
         currentQuestionId = questionData['id'];
-        updateQuestion(this.text, this.options);
+        updateQuestionToUI(text, options);
         showGameUI();
     } else {
         showResultUI();
     }
-},
+}
 
 async function updateJudgement() {
     try {
-        this.lastAction = 'updateJudgement';
-        this.lastActionData = {};
+        lastAction = 'updateJudgement';
+        lastActionData = {};
         showLoading();
         const judgement = await callJudgement();
         hideLoading();
@@ -182,7 +182,7 @@ async function updateJudgement() {
 
 async function callJudgement() {
     try {
-        const response = await getJudgement(this.gameId);
+        const response = await getJudgement(gameId);
         return response['data'];
     } catch (error) {
         console.error('Error getting judgement:', error);
@@ -191,13 +191,13 @@ async function callJudgement() {
 }
 
 async function retryLastAction() {
-    if (this.lastAction === 'loadNextQuestion') {
-        await this.loadNextQuestion();
-    } else if (this.lastAction === 'submitAnswer') {
-        const { questionId, answerIndex } = this.lastActionData;
-        await this.submitAnswer(questionId, answerIndex);
-    } else if (this.lastAction === 'updateJudgement') {
-        await this.updateJudgement();
+    if (lastAction === 'loadNextQuestion') {
+        await loadNextQuestion();
+    } else if (lastAction === 'submitAnswer') {
+        const { questionId, answerIndex } = lastActionData;
+        await submitAnswer(questionId, answerIndex);
+    } else if (lastAction === 'updateJudgement') {
+        await updateJudgement();
     }
 }
 

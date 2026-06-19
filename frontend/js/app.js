@@ -12,14 +12,14 @@ import {
 async function init() {
     // Initialize UI and attach event listeners
     initUI();
-    this.setupEventListeners();
+    setupEventListeners();
 
     // Initialize QR code on page load
-    this.handleInitQR();
+    handleInitQR();
 
     // Check if user is already logged in
     if (isAuthenticated()) {
-        await this.loadUserProfile();
+        await loadUserProfile();
     } else {
         showAuthUI();
     }
@@ -46,61 +46,61 @@ function setupEventListeners() {
     // Form submissions
     loginFormElement.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleLogin();
+        handleLogin();
     });
 
     signupFormElement.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleSignup();
+        handleSignup();
     });
 
     // Logout button
     logoutBtn.addEventListener('click', () => {
-        this.handleLogout();
+        handleLogout();
     });
 
     // Data fetch buttons
     fetchAllDataBtn.addEventListener('click', () => {
-        this.fetchAllData();
+        fetchAllData();
     });
 
     fetchItemBtn.addEventListener('click', () => {
-        this.fetchItemById();
+        fetchItemById();
     });
 
     // Allow Enter key in item ID input to fetch
     itemIdInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            this.fetchItemById();
+            fetchItemById();
         }
     });
 
     // Profile details handlers
     profileDetailsForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleSaveProfileDetails();
+        handleSaveProfileDetails();
     });
 
     viewProfileDetailsBtn.addEventListener('click', () => {
-        this.handleViewProfileDetails();
+        handleViewProfileDetails();
     });
 
     // QR code handlers
     qrForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleGenerateQR();
+        handleGenerateQR();
     });
 
     downloadQrBtn.addEventListener('click', () => {
-        this.handleDownloadQR();
+        handleDownloadQR();
     });
 
     shareWhatsappBtn.addEventListener('click', () => {
-        this.handleShareWhatsApp();
+        handleShareWhatsApp();
     });
 
     pasteBtn.addEventListener('click', () => {
-        this.pasteFromClipboard();
+        pasteFromClipboard();
     });
 }
 
@@ -210,7 +210,7 @@ async function handleSaveProfileDetails() {
             clearProfileDetailsInput();
             // Refresh the display if it's open
             if (profileDetailsDisplay.style.display === 'block') {
-                await this.handleViewProfileDetails();
+                await handleViewProfileDetails();
             }
         }
     } catch (error) {
@@ -275,7 +275,7 @@ async function handleShareWhatsApp() {
         // Convert blob to data URL for sharing
         const response = await fetch(qrImage.src);
         const blob = await response.blob();
-        const dataUrl = await this.blobToDataURL(blob);
+        const dataUrl = await blobToDataURL(blob);
         
         // Try Web Share API first
         if (navigator.share && navigator.canShare) {
