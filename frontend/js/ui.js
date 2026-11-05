@@ -1,20 +1,12 @@
 /**
  * UI Module
- * Manages UI state and interactions
+ * Manages UI state and interactions for protected content
  */
 
-let authSection = null;
 let protectedContent = null;
 let userInfo = null;
-let userEmail = null;
+export let userEmail = null;
 export let logoutBtn = null;
-export let loginLink = null;
-let loginForm = null;
-let signupForm = null;
-export let loginFormElement = null;
-export let signupFormElement = null;
-let showSignupBtn = null;
-export let showLoginBtn = null;
 export let fetchAllDataBtn = null;
 export let fetchItemBtn = null;
 export let itemIdInput = null;
@@ -36,22 +28,15 @@ export let qrImage = null;
 export let downloadQrBtn = null;
 export let shareWhatsappBtn = null;
 export let pasteBtn = null;
+let errorMessage = null;
 
 // Initialize DOM elements
 export function init() {
-    authSection = document.getElementById('auth-section');
     protectedContent = document.getElementById('protected-content');
     userInfo = document.getElementById('user-info');
     userEmail = document.getElementById('user-email');
-    logoutBtn = document.getElementById('logout-btn');
-    loginLink = document.getElementById('login-link');
-    loginForm = document.getElementById('login-form');
-    signupForm = document.getElementById('signup-form');
-    loginFormElement = document.getElementById('login-form-element');
-    signupFormElement = document.getElementById('signup-form-element');
-    showSignupBtn = document.getElementById('show-signup-btn');
-    showLoginBtn = document.getElementById('show-login-btn');
-    fetchAllDataBtn = document.getElementById('fetch-all-data-btn');
+    logoutBtn = () => document.getElementById('logout-btn');
+    fetchAllDataBtn = () => document.getElementById('fetch-all-data-btn');
     fetchItemBtn = document.getElementById('fetch-item-btn');
     itemIdInput = document.getElementById('item-id-input');
     dataOutput = document.getElementById('data-output');
@@ -75,45 +60,6 @@ export function init() {
     pasteBtn = document.getElementById('paste-btn');
 }
 
-// Show authentication UI (not logged in)
-export function showAuthUI() {
-    authSection.style.display = 'block';
-    protectedContent.style.display = 'none';
-    userInfo.style.display = 'none';
-    loginLink.style.display = 'inline';
-}
-
-// Show protected content (logged in)
-export function showProtectedUI() {
-    authSection.style.display = 'none';
-    protectedContent.style.display = 'block';
-    userInfo.style.display = 'inline-flex';
-    loginLink.style.display = 'none';
-}
-
-// Toggle between login and signup forms
-export function toggleSignupForm() {
-    loginForm.style.display = 'none';
-    signupForm.style.display = 'block';
-}
-
-export function toggleLoginForm() {
-    signupForm.style.display = 'none';
-    loginForm.style.display = 'block';
-}
-
-// Set user email display
-export function setUserEmail(email) {
-    userEmail.textContent = email;
-}
-
-// Clear form inputs
-export function clearForms() {
-    loginFormElement.reset();
-    signupFormElement.reset();
-}
-
-// Show data output
 export function displayData(data) {
     loading.style.display = 'none';
     dataContent.textContent = JSON.stringify(data, null, 2);
@@ -137,22 +83,6 @@ export function showError(message) {
 export function showLoading() {
     loading.style.display = 'block';
     dataOutput.style.display = 'none';
-}
-
-// Get form values
-export function getLoginFormValues() {
-    return {
-        email: document.getElementById('login-email').value,
-        password: document.getElementById('login-password').value,
-    };
-}
-
-export function getSignupFormValues() {
-    return {
-        email: document.getElementById('signup-email').value,
-        password: document.getElementById('signup-password').value,
-        confirmPassword: document.getElementById('signup-confirm-password').value,
-    };
 }
 
 export function getItemId() {

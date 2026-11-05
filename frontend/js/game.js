@@ -1,8 +1,9 @@
 import {
     init as initUI, showDefaultUI, showMenu, showGameUI, showLoading, hideLoading, showError, updateQuestion as updateQuestionToUI, showResultUI, showJudgement,
-    optButtons, downloadButton, startNewGameBtn, resumeGameBtn, backToMenuBtn, retryBtn, errorBackBtn
+    optButtons, downloadButton, startNewGameBtn, resumeGameBtn, backToMenuBtn, retryBtn, errorBackBtn, setUserEmail, getLogoutBtn
 } from "./game_ui.js"
-import { isAuthenticated } from "./auth.js";
+import { logout, getCurrentUser } from "./login_api.js";
+import { requireAuth } from "./auth-guard.js";
 import { getGameIDForUser, createGame, deleteGame, generateNewQuestion, submitAnswer as submitAnswerApi, getJudgement } from "./game_api.js";
 
 let currentQuestionId = null;
@@ -14,14 +15,24 @@ let lastAction = null; // Track last action for retry
 let lastActionData = null; // Store data for retry
 
 async function init() {
+    // Ensure user is authenticated, redirect to login if not
+    if (!requireAuth()) {
+        return;
+    }
+
     await initUI();
     setupEventListeners();
 
-    if (isAuthenticated()) {
-        await showGameMenu();
-    } else {
-        showDefaultUI();
+    // Load user profile and display email
+    try {
+        const user = await getCurrentUser();
+        setUserEmail(user.email);
+    } catch (error) {
+        console.error('Error loading user profile:', error);
+        window.location.href = '/login.html';
     }
+
+    await showGameMenu();
 }
 
 function setupEventListeners() {
@@ -38,6 +49,22 @@ function setupEventListeners() {
     backToMenuBtn.addEventListener('click', () => deleteAndBackToMenu());
     retryBtn.addEventListener('click', () => retryLastAction());
     errorBackBtn.addEventListener('click', () => deleteAndBackToMenu());
+    
+    // Logout button handler
+    const logoutBtn = getLogoutBtn();
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await logout();
+                    window.location.href = '/login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    window.location.href = '/login.html';
+                }
+            }
+        });
+    }
 }
 
 async function showGameMenu() {

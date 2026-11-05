@@ -48,14 +48,13 @@ async def signup_callback_proxy():
     <html>
     <head><title>Authenticating...</title></head>
     <body>
-        <script src="/js/client.js"></script>
-        <script src="/js/auth.js"></script>
-        <script>
+        <h1>The server has authenticated the user.<h1>
+        <script type="module">
+            import { handleProcesssAuth } from "/js/auth.js"
             async function handler() {
-                debugger;
                 const hash = window.location.hash.substring(1);
                 if (hash) {
-                    const result = await AUTH.handleProcesssAuth(hash);
+                    const result = await handleProcesssAuth(hash);
                     if (result.success) {
                         window.location.href = "/"
                     } else {

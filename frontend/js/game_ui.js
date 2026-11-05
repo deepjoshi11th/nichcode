@@ -21,9 +21,10 @@ export let startNewGameBtn= null;
 export let backToMenuBtn= null;
 export let retryBtn= null;
 export let errorBackBtn= null;
+export let logoutBtn= null;
+export let userEmail= null;
 
 export async function init() {
-    debugger;
     heroSection = document.querySelector('.hero');
     protectedContent = document.querySelector('#protected-content');
     gameMenu = document.querySelector('#game-menu');
@@ -47,6 +48,8 @@ export async function init() {
     retryBtn = document.querySelector('#retry-btn');
     errorBackBtn = document.querySelector('#error-back-btn');
     errorMessage = document.querySelector('#error-message');
+    logoutBtn = document.querySelector('#logout-btn');
+    userEmail = document.querySelector('#user-email');
 }
 
 export function showMenu(hasExistingGame = false) {
@@ -131,4 +134,14 @@ export function showError(message = 'Failed to load the next question. Please tr
 
 export function hideError() {
     errorOverlay.style.display = 'none';
+}
+
+export function setUserEmail(email) {
+    if (userEmail) {
+        userEmail.textContent = email;
+    }
+}
+
+export function getLogoutBtn() {
+    return logoutBtn;
 }

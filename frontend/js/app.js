@@ -1,68 +1,36 @@
 /**
  * Main Application Module
- * Orchestrates authentication and UI
+ * Orchestrates data operations and QR code generation
  */
-import { isAuthenticated, login, signup, logout, getCurrentUser} from "./auth.js";
-import { fetchAllData, fetchItem, updateProfileDetails, getProfileDetails, generateQR } from "./api.js";
+import { requireAuth } from "./auth-guard.js";
+import { fetchAllData as fetchAllDataAPI, fetchItem, updateProfileDetails, getProfileDetails, generateQR } from "./api.js";
 import { 
-    init as initUI, showAuthUI, toggleSignupForm, toggleLoginForm, getLoginFormValues, showError, setUserEmail, showProtectedUI, clearForms, getSignupFormValues, showLoading, displayData, getItemId, getProfileDetailsInput, clearProfileDetailsInput, displayProfileDetails, getQrFormValues, displayQrCode, setQrText,
-    showLoginBtn, loginLink, loginFormElement, signupFormElement, logoutBtn, fetchAllDataBtn, fetchItemBtn, itemIdInput, profileDetailsForm, viewProfileDetailsBtn, qrForm, downloadQrBtn, shareWhatsappBtn, pasteBtn, profileDetailsDisplay, qrImage
+    init as initUI, showError, showLoading, displayData, getItemId, getProfileDetailsInput, clearProfileDetailsInput, displayProfileDetails, getQrFormValues, displayQrCode, setQrText,
+    fetchAllDataBtn, fetchItemBtn, itemIdInput, profileDetailsForm, viewProfileDetailsBtn, qrForm, downloadQrBtn, shareWhatsappBtn, pasteBtn, profileDetailsDisplay, qrImage
 } from "./ui.js"
 
 async function init() {
+    // Ensure user is authenticated, redirect to login if not
+    if (!requireAuth()) {
+        return;
+    }
+
     // Initialize UI and attach event listeners
     initUI();
     setupEventListeners();
 
     // Initialize QR code on page load
     handleInitQR();
-
-    // Check if user is already logged in
-    if (isAuthenticated()) {
-        await loadUserProfile();
-    } else {
-        showAuthUI();
-    }
 }
 
 function setupEventListeners() {
-    // Form toggle buttons
-    showSignupBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleSignupForm();
-    });
-
-    showLoginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleLoginForm();
-    });
-
-    loginLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        showAuthUI();
-        toggleLoginForm();
-    });
-
-    // Form submissions
-    loginFormElement.addEventListener('submit', (e) => {
-        e.preventDefault();
-        handleLogin();
-    });
-
-    signupFormElement.addEventListener('submit', (e) => {
-        e.preventDefault();
-        handleSignup();
-    });
-
-    // Logout button
-    logoutBtn.addEventListener('click', () => {
-        handleLogout();
-    });
-
     // Data fetch buttons
-    fetchAllDataBtn.addEventListener('click', () => {
-        fetchAllData();
-    });
+    var btn = fetchAllDataBtn()
+    if (btn) {
+        btn.addEventListener('click', () => {
+            fetchAllData();
+        });
+    }
 
     fetchItemBtn.addEventListener('click', () => {
         fetchItemById();
@@ -104,73 +72,13 @@ function setupEventListeners() {
     });
 }
 
-async function handleLogin() {
-    const { email, password } = getLoginFormValues();
 
-    if (!email || !password) {
-        showError('Please fill in all fields');
-        return;
-    }
-
-    const result = await login(email, password);
-
-    if (result.success) {
-        setUserEmail(result.user.email);
-        showProtectedUI();
-        clearForms();
-    } else {
-        showError(result.error);
-    }
-}
-
-async function handleSignup() {
-    const { email, password, confirmPassword } = getSignupFormValues();
-
-    if (!email || !password || !confirmPassword) {
-        showError('Please fill in all fields');
-        return;
-    }
-
-    const result = await signup(email, password, confirmPassword);
-
-    if (result.success) {
-        setUserEmail(result.user.email);
-        showProtectedUI();
-        clearForms();
-    } else {
-        showError(result.error);
-        if (result.error.includes('Check your email')) {
-            toggleLoginForm();
-        }
-    }
-}
-
-async function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-        await logout();
-        showAuthUI();
-        toggleLoginForm();
-        clearForms();
-    }
-}
-
-async function loadUserProfile() {
-    try {
-        const user = await getCurrentUser();
-        setUserEmail(user.email);
-        showProtectedUI();
-    } catch (error) {
-        // Token is invalid
-        showAuthUI();
-        showError('Session expired. Please login again.');
-    }
-}
 
 async function fetchAllData() {
     showLoading();
 
     try {
-        const data = await fetchAllData();
+        const data = await fetchAllDataAPI();
         displayData(data);
     } catch (error) {
         displayData({ error: error.message });
@@ -316,7 +224,6 @@ async function pasteFromClipboard() {
     }
 }
 
-// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    APP.init();
+    init();
 });

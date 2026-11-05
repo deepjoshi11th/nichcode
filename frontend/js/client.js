@@ -32,9 +32,7 @@ export async function call(endpoint, options = {}, responseType = 'json') {
         });
         
         if (response.status === 401) {
-            // Token invalid or expired
             clearToken();
-            throw new Error('Session expired. Please login again.');
         }
         
         if (!response.ok) {
@@ -48,6 +46,9 @@ export async function call(endpoint, options = {}, responseType = 'json') {
         
         return response.json();
     } catch (error) {
+        if (!navigator.onLine) {
+            throw new Error('Seems Like you are offline. Please confirm internet connectivity')
+        }
         throw error;
     }
 }
