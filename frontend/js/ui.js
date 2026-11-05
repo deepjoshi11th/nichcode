@@ -1,229 +1,156 @@
 /**
  * UI Module
- * Manages UI state and interactions
+ * Manages UI state and interactions for protected content
  */
 
-const UI = {
-    // DOM Elements
-    authSection: null,
-    protectedContent: null,
-    userInfo: null,
-    userEmail: null,
-    logoutBtn: null,
-    loginLink: null,
-    loginForm: null,
-    signupForm: null,
-    loginFormElement: null,
-    signupFormElement: null,
-    showSignupBtn: null,
-    showLoginBtn: null,
-    fetchAllDataBtn: null,
-    fetchItemBtn: null,
-    itemIdInput: null,
-    dataOutput: null,
-    dataContent: null,
-    loading: null,
-    profileDetailsForm: null,
-    profileDetailsInput: null,
-    saveProfileDetailsBtn: null,
-    viewProfileDetailsBtn: null,
-    profileDetailsDisplay: null,
-    qrForm: null,
-    qrText: null,
-    qrSize: null,
-    qrFill: null,
-    qrBack: null,
-    qrResult: null,
-    qrImage: null,
-    downloadQrBtn: null,
-    shareWhatsappBtn: null,
-    pasteBtn: null,
+let protectedContent = null;
+let userInfo = null;
+export let userEmail = null;
+export let logoutBtn = null;
+export let fetchAllDataBtn = null;
+export let fetchItemBtn = null;
+export let itemIdInput = null;
+let dataOutput = null;
+let dataContent = null;
+let loading = null;
+export let profileDetailsForm = null;
+let profileDetailsInput = null;
+let saveProfileDetailsBtn = null;
+export let viewProfileDetailsBtn = null;
+export let profileDetailsDisplay = null;
+export let qrForm = null;
+let qrText = null;
+let qrSize = null;
+let qrFill = null;
+let qrBack = null;
+let qrResult = null;
+export let qrImage = null;
+export let downloadQrBtn = null;
+export let shareWhatsappBtn = null;
+export let pasteBtn = null;
+let errorMessage = null;
 
-    // Initialize DOM elements
-    init() {
-        this.authSection = document.getElementById('auth-section');
-        this.protectedContent = document.getElementById('protected-content');
-        this.userInfo = document.getElementById('user-info');
-        this.userEmail = document.getElementById('user-email');
-        this.logoutBtn = document.getElementById('logout-btn');
-        this.loginLink = document.getElementById('login-link');
-        this.loginForm = document.getElementById('login-form');
-        this.signupForm = document.getElementById('signup-form');
-        this.loginFormElement = document.getElementById('login-form-element');
-        this.signupFormElement = document.getElementById('signup-form-element');
-        this.showSignupBtn = document.getElementById('show-signup-btn');
-        this.showLoginBtn = document.getElementById('show-login-btn');
-        this.fetchAllDataBtn = document.getElementById('fetch-all-data-btn');
-        this.fetchItemBtn = document.getElementById('fetch-item-btn');
-        this.itemIdInput = document.getElementById('item-id-input');
-        this.dataOutput = document.getElementById('data-output');
-        this.dataContent = document.getElementById('data-content');
-        this.loading = document.getElementById('loading');
-        this.errorMessage = document.getElementById('error-message');
-        this.profileDetailsForm = document.getElementById('profile-details-form');
-        this.profileDetailsInput = document.getElementById('sensitive-part-input');
-        this.saveProfileDetailsBtn = document.getElementById('save-profile-details-btn');
-        this.viewProfileDetailsBtn = document.getElementById('view-profile-details-btn');
-        this.profileDetailsDisplay = document.getElementById('profile-details-display');
-        this.qrForm = document.getElementById('qr-form');
-        this.qrText = document.getElementById('qr-text');
-        this.qrSize = document.getElementById('qr-size');
-        this.qrFill = document.getElementById('qr-fill');
-        this.qrBack = document.getElementById('qr-back');
-        this.qrResult = document.getElementById('qr-result');
-        this.qrImage = document.getElementById('qr-image');
-        this.downloadQrBtn = document.getElementById('download-qr');
-        this.shareWhatsappBtn = document.getElementById('share-whatsapp');
-        this.pasteBtn = document.getElementById('paste-btn');
-    },
+// Initialize DOM elements
+export function init() {
+    protectedContent = document.getElementById('protected-content');
+    userInfo = document.getElementById('user-info');
+    userEmail = document.getElementById('user-email');
+    logoutBtn = () => document.getElementById('logout-btn');
+    fetchAllDataBtn = () => document.getElementById('fetch-all-data-btn');
+    fetchItemBtn = document.getElementById('fetch-item-btn');
+    itemIdInput = document.getElementById('item-id-input');
+    dataOutput = document.getElementById('data-output');
+    dataContent = document.getElementById('data-content');
+    loading = document.getElementById('loading');
+    errorMessage = document.getElementById('error-message');
+    profileDetailsForm = document.getElementById('profile-details-form');
+    profileDetailsInput = document.getElementById('sensitive-part-input');
+    saveProfileDetailsBtn = document.getElementById('save-profile-details-btn');
+    viewProfileDetailsBtn = document.getElementById('view-profile-details-btn');
+    profileDetailsDisplay = document.getElementById('profile-details-display');
+    qrForm = document.getElementById('qr-form');
+    qrText = document.getElementById('qr-text');
+    qrSize = document.getElementById('qr-size');
+    qrFill = document.getElementById('qr-fill');
+    qrBack = document.getElementById('qr-back');
+    qrResult = document.getElementById('qr-result');
+    qrImage = document.getElementById('qr-image');
+    downloadQrBtn = document.getElementById('download-qr');
+    shareWhatsappBtn = document.getElementById('share-whatsapp');
+    pasteBtn = document.getElementById('paste-btn');
+}
 
-    // Show authentication UI (not logged in)
-    showAuthUI() {
-        this.authSection.style.display = 'block';
-        this.protectedContent.style.display = 'none';
-        this.userInfo.style.display = 'none';
-        this.loginLink.style.display = 'inline';
-    },
+export function displayData(data) {
+    loading.style.display = 'none';
+    dataContent.textContent = JSON.stringify(data, null, 2);
+    dataOutput.style.display = 'block';
+}
 
-    // Show protected content (logged in)
-    showProtectedUI() {
-        this.authSection.style.display = 'none';
-        this.protectedContent.style.display = 'block';
-        this.userInfo.style.display = 'inline-flex';
-        this.loginLink.style.display = 'none';
-    },
+// Show error message
+export function showError(message) {
+    if (errorMessage) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        setTimeout(() => {
+            errorMessage.style.display = 'none';
+        }, 5000);
+    } else {
+        alert(message);
+    }
+}
 
-    // Toggle between login and signup forms
-    toggleSignupForm() {
-        this.loginForm.style.display = 'none';
-        this.signupForm.style.display = 'block';
-    },
+// Show loading state
+export function showLoading() {
+    loading.style.display = 'block';
+    dataOutput.style.display = 'none';
+}
 
-    toggleLoginForm() {
-        this.signupForm.style.display = 'none';
-        this.loginForm.style.display = 'block';
-    },
+export function getItemId() {
+    return itemIdInput.value;
+}
 
-    // Set user email display
-    setUserEmail(email) {
-        this.userEmail.textContent = email;
-    },
+export function getProfileDetailsInput() {
+    return profileDetailsInput.value;
+}
 
-    // Clear form inputs
-    clearForms() {
-        this.loginFormElement.reset();
-        this.signupFormElement.reset();
-    },
+export function setProfileDetailsInput(value) {
+    profileDetailsInput.value = value;
+}
 
-    // Show data output
-    displayData(data) {
-        this.loading.style.display = 'none';
-        this.dataContent.textContent = JSON.stringify(data, null, 2);
-        this.dataOutput.style.display = 'block';
-    },
+export function clearProfileDetailsInput() {
+    profileDetailsInput.value = '';
+}
 
-    // Show error message
-    showError(message) {
-        if (this.errorMessage) {
-            this.errorMessage.textContent = message;
-            this.errorMessage.style.display = 'block';
-            setTimeout(() => {
-                this.errorMessage.style.display = 'none';
-            }, 5000);
-        } else {
-            alert(message);
-        }
-    },
+export function displayProfileDetails(data) {
+    if (data) {
+        profileDetailsDisplay.innerHTML = `
+            <div class="profile-details-card">
+                <h4>Your Profile Details</h4>
+                <p class="detail-label">Sensitive Information:</p>
+                <p class="detail-value">${escapeHtml(data.sensitive_part)}</p>
+                <p class="detail-meta">ID: ${data.id}</p>
+            </div>
+        `;
+    } else {
+        profileDetailsDisplay.innerHTML = '<p style="color: #888888; text-align: center;">No profile details found</p>';
+    }
+    profileDetailsDisplay.style.display = 'block';
+}
 
-    // Show loading state
-    showLoading() {
-        this.loading.style.display = 'block';
-        this.dataOutput.style.display = 'none';
-    },
+export function hideProfileDetails() {
+    profileDetailsDisplay.style.display = 'none';
+}
 
-    // Get form values
-    getLoginFormValues() {
-        return {
-            email: document.getElementById('login-email').value,
-            password: document.getElementById('login-password').value,
-        };
-    },
+export function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-    getSignupFormValues() {
-        return {
-            email: document.getElementById('signup-email').value,
-            password: document.getElementById('signup-password').value,
-            confirmPassword: document.getElementById('signup-confirm-password').value,
-        };
-    },
+export function getQrFormValues() {
+    return {
+        text: qrText.value,
+        size: parseInt(qrSize.value) || 10,
+        fill_color: qrFill.value,
+        back_color: qrBack.value,
+    };
+}
 
-    getItemId() {
-        return this.itemIdInput.value;
-    },
+export function displayQrCode(blob) {
+    const url = URL.createObjectURL(blob);
+    qrImage.src = url;
+    qrResult.style.display = 'block';
+    // Store the blob URL for download/share
+    qrImage.dataset.blobUrl = url;
+}
 
-    getProfileDetailsInput() {
-        return this.profileDetailsInput.value;
-    },
+export function hideQrCode() {
+    qrResult.style.display = 'none';
+    if (qrImage.src) {
+        URL.revokeObjectURL(qrImage.src);
+    }
+}
 
-    setProfileDetailsInput(value) {
-        this.profileDetailsInput.value = value;
-    },
-
-    clearProfileDetailsInput() {
-        this.profileDetailsInput.value = '';
-    },
-
-    displayProfileDetails(data) {
-        if (data) {
-            this.profileDetailsDisplay.innerHTML = `
-                <div class="profile-details-card">
-                    <h4>Your Profile Details</h4>
-                    <p class="detail-label">Sensitive Information:</p>
-                    <p class="detail-value">${this.escapeHtml(data.sensitive_part)}</p>
-                    <p class="detail-meta">ID: ${data.id}</p>
-                </div>
-            `;
-        } else {
-            this.profileDetailsDisplay.innerHTML = '<p style="color: #888888; text-align: center;">No profile details found</p>';
-        }
-        this.profileDetailsDisplay.style.display = 'block';
-    },
-
-    hideProfileDetails() {
-        this.profileDetailsDisplay.style.display = 'none';
-    },
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
-
-    getQrFormValues() {
-        return {
-            text: this.qrText.value,
-            size: parseInt(this.qrSize.value) || 10,
-            fill_color: this.qrFill.value,
-            back_color: this.qrBack.value,
-        };
-    },
-
-    displayQrCode(blob) {
-        const url = URL.createObjectURL(blob);
-        this.qrImage.src = url;
-        this.qrResult.style.display = 'block';
-        // Store the blob URL for download/share
-        this.qrImage.dataset.blobUrl = url;
-    },
-
-    hideQrCode() {
-        this.qrResult.style.display = 'none';
-        if (this.qrImage.src) {
-            URL.revokeObjectURL(this.qrImage.src);
-        }
-    },
-
-    setQrText(value) {
-        this.qrText.value = value;
-    },
-};
+export function setQrText(value) {
+    qrText.value = value;
+}

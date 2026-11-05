@@ -1,318 +1,229 @@
 /**
  * Main Application Module
- * Orchestrates authentication and UI
+ * Orchestrates data operations and QR code generation
  */
+import { requireAuth } from "./auth-guard.js";
+import { fetchAllData as fetchAllDataAPI, fetchItem, updateProfileDetails, getProfileDetails, generateQR } from "./api.js";
+import { 
+    init as initUI, showError, showLoading, displayData, getItemId, getProfileDetailsInput, clearProfileDetailsInput, displayProfileDetails, getQrFormValues, displayQrCode, setQrText,
+    fetchAllDataBtn, fetchItemBtn, itemIdInput, profileDetailsForm, viewProfileDetailsBtn, qrForm, downloadQrBtn, shareWhatsappBtn, pasteBtn, profileDetailsDisplay, qrImage
+} from "./ui.js"
 
-const APP = {
-    async init() {
-        // Initialize UI and attach event listeners
-        UI.init();
-        this.setupEventListeners();
-
-        // Initialize QR code on page load
-        this.handleInitQR();
-
-        // Check if user is already logged in
-        if (AUTH.isAuthenticated()) {
-            await this.loadUserProfile();
-        } else {
-            UI.showAuthUI();
-        }
-    },
-
-    setupEventListeners() {
-        // Form toggle buttons
-        UI.showSignupBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            UI.toggleSignupForm();
-        });
-
-        UI.showLoginBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            UI.toggleLoginForm();
-        });
-
-        UI.loginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            UI.showAuthUI();
-            UI.toggleLoginForm();
-        });
-
-        // Form submissions
-        UI.loginFormElement.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
-
-        UI.signupFormElement.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleSignup();
-        });
-
-        // Logout button
-        UI.logoutBtn.addEventListener('click', () => {
-            this.handleLogout();
-        });
-
-        // Data fetch buttons
-        UI.fetchAllDataBtn.addEventListener('click', () => {
-            this.fetchAllData();
-        });
-
-        UI.fetchItemBtn.addEventListener('click', () => {
-            this.fetchItemById();
-        });
-
-        // Allow Enter key in item ID input to fetch
-        UI.itemIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.fetchItemById();
-            }
-        });
-
-        // Profile details handlers
-        UI.profileDetailsForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleSaveProfileDetails();
-        });
-
-        UI.viewProfileDetailsBtn.addEventListener('click', () => {
-            this.handleViewProfileDetails();
-        });
-
-        // QR code handlers
-        UI.qrForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleGenerateQR();
-        });
-
-        UI.downloadQrBtn.addEventListener('click', () => {
-            this.handleDownloadQR();
-        });
-
-        UI.shareWhatsappBtn.addEventListener('click', () => {
-            this.handleShareWhatsApp();
-        });
-
-        UI.pasteBtn.addEventListener('click', () => {
-            this.pasteFromClipboard();
-        });
-    },
-
-    async handleLogin() {
-        const { email, password } = UI.getLoginFormValues();
-
-        if (!email || !password) {
-            UI.showError('Please fill in all fields');
-            return;
-        }
-
-        const result = await AUTH.login(email, password);
-
-        if (result.success) {
-            UI.setUserEmail(result.user.email);
-            UI.showProtectedUI();
-            UI.clearForms();
-        } else {
-            UI.showError(result.error);
-        }
-    },
-
-    async handleSignup() {
-        const { email, password, confirmPassword } = UI.getSignupFormValues();
-
-        if (!email || !password || !confirmPassword) {
-            UI.showError('Please fill in all fields');
-            return;
-        }
-
-        const result = await AUTH.signup(email, password, confirmPassword);
-
-        if (result.success) {
-            UI.setUserEmail(result.user.email);
-            UI.showProtectedUI();
-            UI.clearForms();
-        } else {
-            UI.showError(result.error);
-            if (result.error.includes('Check your email')) {
-                UI.toggleLoginForm();
-            }
-        }
-    },
-
-    async handleLogout() {
-        if (confirm('Are you sure you want to logout?')) {
-            await AUTH.logout();
-            UI.showAuthUI();
-            UI.toggleLoginForm();
-            UI.clearForms();
-        }
-    },
-
-    async loadUserProfile() {
-        try {
-            const user = await AUTH.getCurrentUser();
-            UI.setUserEmail(user.email);
-            UI.showProtectedUI();
-        } catch (error) {
-            // Token is invalid
-            UI.showAuthUI();
-            UI.showError('Session expired. Please login again.');
-        }
-    },
-
-    async fetchAllData() {
-        UI.showLoading();
-
-        try {
-            const data = await API.fetchAllData();
-            UI.displayData(data);
-        } catch (error) {
-            UI.displayData({ error: error.message });
-        }
-    },
-
-    async fetchItemById() {
-        const itemId = UI.getItemId();
-
-        if (!itemId) {
-            UI.showError('Please enter an item ID');
-            return;
-        }
-
-        UI.showLoading();
-
-        try {
-            const data = await API.fetchItem(itemId);
-            UI.displayData(data);
-        } catch (error) {
-            UI.displayData({ error: error.message });
-        }
-    },
-
-    async handleSaveProfileDetails() {
-        const sensitivePart = UI.getProfileDetailsInput();
-
-        if (!sensitivePart) {
-            UI.showError('Please enter profile details');
-            return;
-        }
-
-        try {
-            const result = await API.updateProfileDetails(sensitivePart);
-            if (result.success) {
-                UI.showError('Profile details saved successfully!');
-                UI.clearProfileDetailsInput();
-                // Refresh the display if it's open
-                if (UI.profileDetailsDisplay.style.display === 'block') {
-                    await this.handleViewProfileDetails();
-                }
-            }
-        } catch (error) {
-            UI.showError(error.message);
-        }
-    },
-
-    async handleViewProfileDetails() {
-        try {
-            const result = await API.getProfileDetails();
-            if (result.success) {
-                UI.displayProfileDetails(result.data);
-            }
-        } catch (error) {
-            UI.showError(error.message);
-        }
-    },
-
-    async handleGenerateQR() {
-        const data = UI.getQrFormValues();
-
-        if (!data.text) {
-            UI.showError('Please enter a link');
-            return;
-        }
-
-        try {
-            const blob = await API.generateQR(data);
-            UI.displayQrCode(blob);
-        } catch (error) {
-            UI.showError(error.message);
-        }
-    },
-
-    async handleInitQR() {
-        const data = {
-            text: window.location.href,
-            size: 10,
-            fill_color: "#000000",
-            back_color: "#ffffff",
-        };
-
-        try {
-            const blob = await API.generateQR(data);
-            UI.displayQrCode(blob);
-        } catch (error) {
-            UI.showError(error.message);
-        }
-    },
-
-    handleDownloadQR() {
-        const link = document.createElement('a');
-        link.href = UI.qrImage.src;
-        link.download = 'qrcode.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    },
-
-    async handleShareWhatsApp() {
-        try {
-            // Convert blob to data URL for sharing
-            const response = await fetch(UI.qrImage.src);
-            const blob = await response.blob();
-            const dataUrl = await this.blobToDataURL(blob);
-            
-            // Try Web Share API first
-            if (navigator.share && navigator.canShare) {
-                const file = new File([blob], 'qrcode.png', { type: 'image/png' });
-                if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        title: 'QR Code',
-                        text: dataUrl,
-                        files: [file],
-                    });
-                    return;
-                }
-            }
-            
-            // Fallback: Open WhatsApp Web with text
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent('Check out this QR code! ' + dataUrl)}`;
-            window.open(whatsappUrl, '_blank');
-        } catch (error) {
-            alert('Error sharing to WhatsApp: ' + error.message);
-        }
-    },
-
-    blobToDataURL(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    },
-
-    async pasteFromClipboard() {
-        try {
-            const text = await navigator.clipboard.readText();
-            UI.setQrText(text);
-        } catch (error) {
-            alert('Failed to read from clipboard: ' + error.message);
-        }
+async function init() {
+    // Ensure user is authenticated, redirect to login if not
+    if (!requireAuth()) {
+        return;
     }
-};
 
-// Initialize app when DOM is ready
+    // Initialize UI and attach event listeners
+    initUI();
+    setupEventListeners();
+
+    // Initialize QR code on page load
+    handleInitQR();
+}
+
+function setupEventListeners() {
+    // Data fetch buttons
+    var btn = fetchAllDataBtn()
+    if (btn) {
+        btn.addEventListener('click', () => {
+            fetchAllData();
+        });
+    }
+
+    fetchItemBtn.addEventListener('click', () => {
+        fetchItemById();
+    });
+
+    // Allow Enter key in item ID input to fetch
+    itemIdInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            fetchItemById();
+        }
+    });
+
+    // Profile details handlers
+    profileDetailsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleSaveProfileDetails();
+    });
+
+    viewProfileDetailsBtn.addEventListener('click', () => {
+        handleViewProfileDetails();
+    });
+
+    // QR code handlers
+    qrForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleGenerateQR();
+    });
+
+    downloadQrBtn.addEventListener('click', () => {
+        handleDownloadQR();
+    });
+
+    shareWhatsappBtn.addEventListener('click', () => {
+        handleShareWhatsApp();
+    });
+
+    pasteBtn.addEventListener('click', () => {
+        pasteFromClipboard();
+    });
+}
+
+
+
+async function fetchAllData() {
+    showLoading();
+
+    try {
+        const data = await fetchAllDataAPI();
+        displayData(data);
+    } catch (error) {
+        displayData({ error: error.message });
+    }
+}
+
+async function fetchItemById() {
+    const itemId = getItemId();
+
+    if (!itemId) {
+        showError('Please enter an item ID');
+        return;
+    }
+
+    showLoading();
+
+    try {
+        const data = await fetchItem(itemId);
+        displayData(data);
+    } catch (error) {
+        displayData({ error: error.message });
+    }
+}
+
+async function handleSaveProfileDetails() {
+    const sensitivePart = getProfileDetailsInput();
+
+    if (!sensitivePart) {
+        showError('Please enter profile details');
+        return;
+    }
+
+    try {
+        const result = await updateProfileDetails(sensitivePart);
+        if (result.success) {
+            showError('Profile details saved successfully!');
+            clearProfileDetailsInput();
+            // Refresh the display if it's open
+            if (profileDetailsDisplay.style.display === 'block') {
+                await handleViewProfileDetails();
+            }
+        }
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function handleViewProfileDetails() {
+    try {
+        const result = await getProfileDetails();
+        if (result.success) {
+            displayProfileDetails(result.data);
+        }
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function handleGenerateQR() {
+    const data = getQrFormValues();
+
+    if (!data.text) {
+        showError('Please enter a link');
+        return;
+    }
+
+    try {
+        const blob = await generateQR(data);
+        displayQrCode(blob);
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function handleInitQR() {
+    const data = {
+        text: window.location.href,
+        size: 10,
+        fill_color: "#000000",
+        back_color: "#ffffff",
+    };
+
+    try {
+        const blob = await generateQR(data);
+        displayQrCode(blob);
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+function handleDownloadQR() {
+    const link = document.createElement('a');
+    link.href = qrImage.src;
+    link.download = 'qrcode.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function handleShareWhatsApp() {
+    try {
+        // Convert blob to data URL for sharing
+        const response = await fetch(qrImage.src);
+        const blob = await response.blob();
+        const dataUrl = await blobToDataURL(blob);
+        
+        // Try Web Share API first
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], 'qrcode.png', { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'QR Code',
+                    text: dataUrl,
+                    files: [file],
+                });
+                return;
+            }
+        }
+        
+        // Fallback: Open WhatsApp Web with text
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent('Check out this QR code! ' + dataUrl)}`;
+        window.open(whatsappUrl, '_blank');
+    } catch (error) {
+        alert('Error sharing to WhatsApp: ' + error.message);
+    }
+}
+
+function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function pasteFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        setQrText(text);
+    } catch (error) {
+        alert('Failed to read from clipboard: ' + error.message);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    APP.init();
+    init();
 });
